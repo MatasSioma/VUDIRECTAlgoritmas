@@ -83,23 +83,68 @@ def DIRECT(f, bounds, max_iter=3000, max_evals=3000, eps=1e-4):
 
     # Inicializacija
     center = np.full(n, 0.5)
-    f_min = f_normalized(center)
+    f_val_center = f_normalized(center)
+    f_min = f_val_center 
+    eval_count = 1
+
     best_point = center.copy()
 
     rectangles = []
     index_counter = 0
 
-    # pradinis hiberkubo kraštinių ilgis = 1 (normalizuotas)
+    # Pradinis hiberkubo kraštinių ilgis = 1 (normalizuotas)
     edge_lengths = np.ones(n)
-
-    rectangles.append(Rectangle(center, edge_lengths, f_min, index_counter))
-    index_counter += 1
-
     delta = 1.0 / 3
 
-    eval_count = 1
-    iteration = 0
+    f_samples_plus = {}  # Saugo f(c1 + delta*e_i)
+    f_samples_minus = {} # Saugo f(c1 - delta*e_i)
+    points_plus = {}     # Saugo taškus c1 + delta*e_i
+    points_minus = {}    # Saugo taškus c1 - delta*e_i
 
+    for i in range(n):
+        point_plus_i = center.copy()
+        point_plus_i[i] += delta
+        val_plus = f_normalized(point_plus_i)
+        eval_count += 1
+        if val_plus < f_min:
+            f_min = val_plus
+            best_point = point_plus_i.copy()
+        f_samples_plus[i] = val_plus
+        points_plus[i] = point_plus_i.copy()
+
+        point_minus_i = center.copy()
+        point_minus_i[i] -= delta
+        val_minus = f_normalized(point_minus_i)
+        eval_count += 1
+        if val_minus < f_min:
+            f_min = val_minus
+            best_point = point_minus_i.copy()
+        f_samples_minus[i] = val_minus
+        points_minus[i] = point_minus_i.copy()
+
+    best_k = -1
+    w_values = [min(f_samples_plus[i], f_samples_minus[i]) for i in range(n)]
+    min_w_val = np.inf
+    for i in range(n):
+        if w_values[i] < min_w_val:
+            min_w_val = w_values[i]
+            best_k = i
+
+    new_rect_edge_lengths = edge_lengths.copy()
+    new_rect_edge_lengths[best_k] = delta
+
+    # Padalinti pradiniai stačiakampiai per geriausia ašį
+    rectangles.append(Rectangle(points_minus[best_k].copy(), new_rect_edge_lengths.copy(), f_samples_minus[best_k], index_counter))
+    index_counter += 1
+
+    rectangles.append(Rectangle(center.copy(), new_rect_edge_lengths.copy(), f_val_center, index_counter))
+    index_counter += 1
+    
+    rectangles.append(Rectangle(points_plus[best_k].copy(), new_rect_edge_lengths.copy(), f_samples_plus[best_k], index_counter))
+    index_counter += 1
+
+
+    iteration = 0
     KNOWN_GLOBAL_MIN = np.float64(-186.7309088)
 
     while iteration < max_iter and eval_count < max_evals:
