@@ -145,7 +145,7 @@ def DIRECT(f, bounds, max_iter=3000, max_evals=3000, eps=1e-4):
 
 
     iteration = 0
-    KNOWN_GLOBAL_MIN = np.float64(-186.7309088)
+    KNOWN_GLOBAL_MIN = np.float64(-0.1867E+03)
 
     while iteration < max_iter and eval_count < max_evals:
         iteration += 1
